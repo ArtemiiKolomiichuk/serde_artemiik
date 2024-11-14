@@ -56,7 +56,7 @@ struct Request {
     debug: Debug,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum RequestType {
     #[serde(rename = "success")]
     Success,
@@ -73,4 +73,24 @@ fn main() {
     println!("Yaml:\n{{\n{}}}\n", yaml);
     let toml = toml::to_string(&request).unwrap();
     println!("Toml:\n{{\n{}}}", toml)
+}
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn test_1(){
+        let json = std::fs::read_to_string("req.json").unwrap();
+        let request: Request = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(request.req_type, RequestType::Success);
+        assert_eq!(request.stream.user_id, uuid::Uuid::parse_str("8d234120-0bda-49b2-b7e0-fbd3912f6cbf").unwrap());
+        assert_eq!(request.stream.public_tariff.price, 100.0);
+        assert_eq!(request.gifts[0].price, 2.0);
+        assert_eq!(request.gifts.len(), 2);
+        assert_eq!(request.debug.duration, Duration::from_millis(234));
+        assert_eq!(request.stream.public_tariff.duration, Duration::from_secs(3600));
+        assert_eq!(request.stream.private_tariff.unwrap().duration, Duration::from_secs(60));
+    }
 }
