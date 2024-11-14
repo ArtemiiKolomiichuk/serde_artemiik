@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::time::Duration;
 use url::Url;
 
@@ -64,7 +64,35 @@ enum RequestType {
     Failure,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Event{
+    name: String,
+    #[serde(serialize_with = "serealize_date", deserialize_with = "deserialize_date")]
+    date: String,
+}
+
+fn serealize_date<S:Serializer>(date: &str, serealizer: S) -> Result<S::Ok, S::Error>{
+    serealizer.serialize_str(&format!("Date: {}", date))
+}
+
+fn deserialize_date<'de, D:Deserializer<'de>>(deserializer: D) -> Result<String, D::Error>{
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    Ok(s.replace("Date: ", ""))
+}
+
+
 fn main() {
+    let event = Event{
+        name: "EventName".to_string(),
+        date: "2024-11-14".to_string(),
+    };
+    let json = serde_json::to_string(&event).unwrap();
+    println!("{}\n", json);
+
+    let de_event: Event = serde_json::from_str(&json).unwrap();
+    println!("{:#?}\n", de_event);
+
+    /* 
     let json = std::fs::read_to_string("req.json").unwrap();
     let request: Request = serde_json::from_str(&json).unwrap();
     println!("{:#?}\n", request);
@@ -73,6 +101,7 @@ fn main() {
     println!("Yaml:\n{{\n{}}}\n", yaml);
     let toml = toml::to_string(&request).unwrap();
     println!("Toml:\n{{\n{}}}", toml)
+    */
 }
 
 #[cfg(test)]
